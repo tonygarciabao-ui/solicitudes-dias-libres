@@ -503,8 +503,16 @@
     <script>
         const SUPABASE_URL = 'https://iujjnaloajvbfuajnrjk.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_0xQo9qxEXoMcQvjNwAmbGA_CicppUNk';
-        const { createClient } = window.supabase;
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabaseClient;
+        
+        // Esperar a que Supabase esté disponible
+        if (window.supabase) {
+            const { createClient } = window.supabase;
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        } else {
+            console.error('Supabase no se cargó correctamente');
+        }
+        const supabase = supabaseClient;
 
         let trabajadorActual = null;
         let mesActual = new Date();
