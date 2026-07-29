@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Días Libres</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase/2.38.4/supabase.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #f59e0b;
+            --gray-light: #f3f4f6;
+            --gray-dark: #374151;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gray-light);
+            color: var(--gray-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 15px;
+            background: white;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--gray-dark);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--gray-dark);
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-secondary {
+            background: var(--gray-light);
+            color: var(--gray-dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #991b1b;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin: 15px 0;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .calendar-day:hover {
+            border-color: var(--primary);
+            background: #f0f4ff;
+        }
+
+        .calendar-day.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .calendar-day.disabled {
+            background: var(--gray-light);
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .summary-box {
+            background: #f0f4ff;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .summary-item:last-child {
+            margin-bottom: 0;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid var(--success);
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--danger);
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid var(--primary);
+        }
+
+        .solicitud-card {
+            background: var(--gray-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .solicitud-card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+
+        .solicitud-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-cancelled {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .badge-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            padding: 15px;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 400px;
+            width: 100%;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal h2 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+
+            header {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 20px;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📅 Solicitud de Días Libres</h1>
+            <p id="header-usuario">Estrellla Galicia</p>
+        </header>
+
+        <div id="auth-section">
+            <div class="form-group">
+                <label>Selecciona tu nombre:</label>
+                <select id="trabajador-select" onchange="cambiarTrabajador()">
+                    <option value="">-- Cargando trabajadores --</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="iniciarSesion()">Entrar</button>
+        </div>
+
+        <div id="main-section" style="display: none;">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="cambiarTab('solicitar')">Nueva Solicitud</button>
+                <button class="tab-btn" onclick="cambiarTab('historial')">Mi Historial</button>
+                <button class="tab-btn" onclick="cerrarSesion()">Salir</button>
+            </div>
+
+            <!-- TAB: NUEVA SOLICITUD -->
+            <div id="tab-solicitar" class="tab-content active">
+                <div id="alerta-solicitud"></div>
+
+                <div class="form-group">
+                    <label>Tipo de ausencia:</label>
+                    <select id="tipo-ausencia">
+                        <option value="Días Libres">Días Libres</option>
+                        <option value="Asunto Personal">Asunto Personal</option>
+                        <option value="Compensación">Compensación</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>¿Cómo deseas solicitar?</label>
+                    <div style="display: flex; gap: 10px;">
+                        <label style="display: flex; align-items: center; margin: 0; width: auto;">
+                            <input type="radio" name="tipo-solicitud" value="continuo" checked onchange="cambiarTipoSolicitud()"> Período continuo
+                        </label>
+                        <label style="display: flex; align-items: center; margin: 0; width: auto;">
+                            <input type="radio" name="tipo-solicitud" value="individual" onchange="cambiarTipoSolicitud()"> Días sueltos
+                        </label>
+                    </div>
+                </div>
+
+                <!-- SOLICITUD CONTINUA -->
+                <div id="seccion-continua">
+                    <div class="form-group">
+                        <label>Fecha de inicio:</label>
+                        <input type="date" id="fecha-inicio" onchange="recalcularDias()">
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de fin:</label>
+                        <input type="date" id="fecha-fin" onchange="recalcularDias()">
+                    </div>
+                </div>
+
+                <!-- SOLICITUD INDIVIDUAL -->
+                <div id="seccion-individual" style="display: none;">
+                    <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Haz click en los días que deseas solicitar:</p>
+                    <div class="calendar-header">
+                        <button class="btn-secondary" style="width: auto; padding: 5px 10px; font-size: 12px;" onclick="mesAnterior()">← Anterior</button>
+                        <span id="mes-actual" style="font-weight: 600;"></span>
+                        <button class="btn-secondary" style="width: auto; padding: 5px 10px; font-size: 12px;" onclick="mesSiguiente()">Siguiente →</button>
+                    </div>
+                    <div class="calendar" id="calendario"></div>
+                    <p id="dias-seleccionados-texto" style="font-size: 13px; color: #666; margin-top: 10px;"></p>
+                </div>
+
+                <div class="form-group">
+                    <label>Comentarios (opcional):</label>
+                    <textarea id="comentario" placeholder="Escribe aquí cualquier detalle adicional..."></textarea>
+                </div>
+
+                <div id="resumen-solicitud" class="summary-box" style="display: none;">
+                    <h3 style="margin-bottom: 10px; color: var(--primary);">📋 Resumen de tu solicitud:</h3>
+                    <div class="summary-item">
+                        <span>Tipo de ausencia:</span>
+                        <strong id="resumen-tipo"></strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Fechas:</span>
+                        <strong id="resumen-fechas"></strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Días laborables:</span>
+                        <strong id="resumen-dias"></strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Total:</span>
+                        <strong id="resumen-total"></strong>
+                    </div>
+                </div>
+
+                <div class="btn-group" id="botones-accion">
+                    <button class="btn btn-secondary" onclick="mostrarResumen()">Ver Resumen</button>
+                    <button class="btn btn-primary" onclick="enviarSolicitud()" style="display: none;" id="btn-enviar">Enviar Solicitud</button>
+                </div>
+            </div>
+
+            <!-- TAB: HISTORIAL -->
+            <div id="tab-historial" class="tab-content">
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Aquí puedes ver todas tus solicitudes</p>
+                <div id="historial-contenido"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://iujjnaloajvbfuajnrjk.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_0xQo9qxEXoMcQvjNwAmbGA_CicppUNk';
+        const { createClient } = window.supabase;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let trabajadorActual = null;
+        let mesActual = new Date();
+        let diasSeleccionados = [];
+        let festivos = [];
+
+        // Inicializar
+        async function init() {
+            await cargarTrabajadores();
+            await cargarFestivos();
+        }
+
+        async function cargarTrabajadores() {
+            try {
+                const { data, error } = await supabase
+                    .from('trabajadores')
+                    .select('*')
+                    .order('nombre');
+                
+                if (error) throw error;
+                
+                const select = document.getElementById('trabajador-select');
+                select.innerHTML = '<option value="">-- Selecciona tu nombre --</option>';
+                
+                data.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t.id;
+                    option.textContent = t.nombre;
+                    option.dataset.nombre = t.nombre;
+                    option.dataset.email = t.email;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando trabajadores:', error);
+                alert('Error al cargar trabajadores');
+            }
+        }
+
+        async function cargarFestivos() {
+            try {
+                const { data, error } = await supabase
+                    .from('festivos')
+                    .select('fecha');
+                
+                if (error) throw error;
+                festivos = data.map(f => new Date(f.fecha).toISOString().split('T')[0]);
+            } catch (error) {
+                console.error('Error cargando festivos:', error);
+            }
+        }
+
+        function cambiarTrabajador() {
+            const select = document.getElementById('trabajador-select');
+            const option = select.options[select.selectedIndex];
+            if (option.value) {
+                document.getElementById('header-usuario').textContent = option.dataset.nombre;
+            }
+        }
+
+        function iniciarSesion() {
+            const select = document.getElementById('trabajador-select');
+            if (!select.value) {
+                alert('Selecciona tu nombre');
+                return;
+            }
+            const option = select.options[select.selectedIndex];
+            trabajadorActual = {
+                id: select.value,
+                nombre: option.dataset.nombre,
+                email: option.dataset.email
+            };
+            
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('main-section').style.display = 'block';
+            cargarHistorial();
+            dibujarCalendario();
+        }
+
+        function cambiarTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            if (tab === 'solicitar') {
+                document.getElementById('tab-solicitar').classList.add('active');
+                event.target.classList.add('active');
+            } else if (tab === 'historial') {
+                document.getElementById('tab-historial').classList.add('active');
+                event.target.classList.add('active');
+                cargarHistorial();
+            }
+        }
+
+        function cambiarTipoSolicitud() {
+            const tipo = document.querySelector('input[name="tipo-solicitud"]:checked').value;
+            if (tipo === 'continuo') {
+                document.getElementById('seccion-continua').style.display = 'block';
+                document.getElementById('seccion-individual').style.display = 'none';
+            } else {
+                document.getElementById('seccion-continua').style.display = 'none';
+                document.getElementById('seccion-individual').style.display = 'block';
+            }
+            diasSeleccionados = [];
+            limpiarResumen();
+        }
+
+        function dibujarCalendario() {
+            const calendar = document.getElementById('calendario');
+            calendar.innerHTML = '';
+            
+            const year = mesActual.getFullYear();
+            const month = mesActual.getMonth();
+            
+            // Encabezados de días
+            ['L', 'M', 'X', 'J', 'V', 'S', 'D'].forEach(d => {
+                const header = document.createElement('div');
+                header.textContent = d;
+                header.style.fontWeight = '600';
+                header.style.textAlign = 'center';
+                header.style.fontSize = '12px';
+                calendar.appendChild(header);
+            });
+            
+            // Primer día del mes
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Espacios vacíos iniciales
+            for (let i = 0; i < (firstDay === 0 ? 6 : firstDay - 1); i++) {
+                const empty = document.createElement('div');
+                calendar.appendChild(empty);
+            }
+            
+            // Días del mes
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const date = new Date(dateStr);
+                const dayOfWeek = date.getDay();
+                
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                dayDiv.textContent = day;
+                
+                // Deshabilitar pasado
+                if (date < new Date().setHours(0,0,0,0)) {
+                    dayDiv.classList.add('disabled');
+                } 
+                // Deshabilitar sábados y domingos
+                else if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    dayDiv.classList.add('disabled');
+                }
+                // Deshabilitar festivos
+                else if (festivos.includes(dateStr)) {
+                    dayDiv.classList.add('disabled');
+                }
+                else {
+                    dayDiv.onclick = () => toggleDia(dateStr, dayDiv);
+                }
+                
+                if (diasSeleccionados.includes(dateStr)) {
+                    dayDiv.classList.add('selected');
+                }
+                
+                calendar.appendChild(dayDiv);
+            }
+            
+            // Actualizar título
+            const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            document.getElementById('mes-actual').textContent = `${meses[month]} ${year}`;
+            
+            // Actualizar texto de días seleccionados
+            if (diasSeleccionados.length > 0) {
+                document.getElementById('dias-seleccionados-texto').textContent = 
+                    `${diasSeleccionados.length} día(s) seleccionado(s)`;
+            }
+        }
+
+        function toggleDia(dateStr, element) {
+            if (diasSeleccionados.includes(dateStr)) {
+                diasSeleccionados = diasSeleccionados.filter(d => d !== dateStr);
+                element.classList.remove('selected');
+            } else {
+                diasSeleccionados.push(dateStr);
+                diasSeleccionados.sort();
+                element.classList.add('selected');
+            }
+            dibujarCalendario();
+            limpiarResumen();
+        }
+
+        function mesAnterior() {
+            mesActual.setMonth(mesActual.getMonth() - 1);
+            dibujarCalendario();
+        }
+
+        function mesSiguiente() {
+            mesActual.setMonth(mesActual.getMonth() + 1);
+            dibujarCalendario();
+        }
+
+        function contarDiasLaborables(inicio, fin) {
+            let count = 0;
+            const start = new Date(inicio);
+            const end = new Date(fin);
+            
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dayOfWeek = d.getDay();
+                const dateStr = d.toISOString().split('T')[0];
+                
+                // No contar sábados, domingos ni festivos
+                if (dayOfWeek !== 0 && dayOfWeek !== 6 && !festivos.includes(dateStr)) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        function recalcularDias() {
+            const inicio = document.getElementById('fecha-inicio').value;
+            const fin = document.getElementById('fecha-fin').value;
+            
+            if (inicio && fin) {
+                if (new Date(fin) < new Date(inicio)) {
+                    alert('La fecha final no puede ser anterior a la inicial');
+                    document.getElementById('fecha-fin').value = '';
+                    return;
+                }
+                mostrarResumen();
+            }
+        }
+
+        function mostrarResumen() {
+            const tipo = document.querySelector('input[name="tipo-solicitud"]:checked').value;
+            const tipoAusencia = document.getElementById('tipo-ausencia').value;
+            let fechasTexto = '';
+            let diasLaborables = 0;
+
+            if (tipo === 'continuo') {
+                const inicio = document.getElementById('fecha-inicio').value;
+                const fin = document.getElementById('fecha-fin').value;
+                
+                if (!inicio || !fin) {
+                    alert('Completa las fechas');
+                    return;
+                }
+                
+                diasLaborables = contarDiasLaborables(inicio, fin);
+                fechasTexto = `${formatearFecha(inicio)} a ${formatearFecha(fin)}`;
+                
+                document.getElementById('resumen-tipo').textContent = tipoAusencia;
+                document.getElementById('resumen-fechas').textContent = fechasTexto;
+                document.getElementById('resumen-dias').textContent = diasLaborables;
+                document.getElementById('resumen-total').textContent = `${diasLaborables} día(s)`;
+            } else {
+                if (diasSeleccionados.length === 0) {
+                    alert('Selecciona al menos un día');
+                    return;
+                }
+                
+                diasLaborables = diasSeleccionados.length;
+                fechasTexto = diasSeleccionados.map(d => formatearFecha(d)).join(', ');
+                
+                document.getElementById('resumen-tipo').textContent = tipoAusencia;
+                document.getElementById('resumen-fechas').textContent = fechasTexto;
+                document.getElementById('resumen-dias').textContent = diasLaborables;
+                document.getElementById('resumen-total').textContent = `${diasLaborables} día(s)`;
+            }
+            
+            document.getElementById('resumen-solicitud').style.display = 'block';
+            document.getElementById('btn-enviar').style.display = 'block';
+            window.scrollTo(0, document.getElementById('resumen-solicitud').offsetTop - 100);
+        }
+
+        async function enviarSolicitud() {
+            const tipoAusencia = document.getElementById('tipo-ausencia').value;
+            const comentario = document.getElementById('comentario').value;
+            const tipo = document.querySelector('input[name="tipo-solicitud"]:checked').value;
+            const btn = document.getElementById('btn-enviar');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Enviando...';
+            
+            try {
+                let fechaInicio, fechaFin, diasLaborables;
+                
+                if (tipo === 'continuo') {
+                    fechaInicio = document.getElementById('fecha-inicio').value;
+                    fechaFin = document.getElementById('fecha-fin').value;
+                    diasLaborables = contarDiasLaborables(fechaInicio, fechaFin);
+                } else {
+                    fechaInicio = diasSeleccionados[0];
+                    fechaFin = diasSeleccionados[diasSeleccionados.length - 1];
+                    diasLaborables = diasSeleccionados.length;
+                }
+                
+                // Crear solicitud
+                const { data: solicitud, error: errorSolicitud } = await supabase
+                    .from('solicitudes')
+                    .insert([{
+                        trabajador_id: trabajadorActual.id,
+                        trabajador_nombre: trabajadorActual.nombre,
+                        email_trabajador: trabajadorActual.email,
+                        tipo_ausencia: tipoAusencia,
+                        fecha_inicio: fechaInicio,
+                        fecha_fin: fechaFin,
+                        dias_laborables: diasLaborables,
+                        comentario: comentario || null,
+                        estado: 'Pendiente'
+                    }])
+                    .select();
+                
+                if (errorSolicitud) throw errorSolicitud;
+                
+                // Si son días individuales, guardarlos
+                if (tipo === 'individual' && diasSeleccionados.length > 0) {
+                    const diasParaGuardar = diasSeleccionados.map(fecha => ({
+                        solicitud_id: solicitud[0].id,
+                        fecha: fecha
+                    }));
+                    
+                    const { error: errorDias } = await supabase
+                        .from('solicitudes_dias_individuales')
+                        .insert(diasParaGuardar);
+                    
+                    if (errorDias) throw errorDias;
+                }
+                
+                // Mostrar éxito
+                const alerta = document.getElementById('alerta-solicitud');
+                alerta.innerHTML = '<div class="alert alert-success">✅ Solicitud enviada correctamente. Tu manager la revisará pronto.</div>';
+                
+                // Limpiar formulario
+                setTimeout(() => {
+                    document.getElementById('tipo-ausencia').value = 'Días Libres';
+                    document.getElementById('fecha-inicio').value = '';
+                    document.getElementById('fecha-fin').value = '';
+                    document.getElementById('comentario').value = '';
+                    diasSeleccionados = [];
+                    limpiarResumen();
+                    cargarHistorial();
+                    dibujarCalendario();
+                    alerta.innerHTML = '';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('alerta-solicitud').innerHTML = 
+                    `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Enviar Solicitud';
+            }
+        }
+
+        async function cargarHistorial() {
+            if (!trabajadorActual) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('solicitudes')
+                    .select('*')
+                    .eq('trabajador_id', trabajadorActual.id)
+                    .order('fecha_solicitud', { ascending: false });
+                
+                if (error) throw error;
+                
+                const contenido = document.getElementById('historial-contenido');
+                
+                if (data.length === 0) {
+                    contenido.innerHTML = '<p style="color: #999; text-align: center;">No tienes solicitudes aún</p>';
+                    return;
+                }
+                
+                contenido.innerHTML = data.map(s => `
+                    <div class="solicitud-card">
+                        <h3>${s.tipo_ausencia}</h3>
+                        <div class="solicitud-info">
+                            <span>${formatearFecha(s.fecha_inicio)} - ${formatearFecha(s.fecha_fin)}</span>
+                            <span class="badge badge-${s.estado.toLowerCase()}">${s.estado}</span>
+                        </div>
+                        <div class="solicitud-info">
+                            <span>${s.dias_laborables} día(s) laborable(s)</span>
+                        </div>
+                        ${s.comentario ? `<div class="solicitud-info"><span><em>"${s.comentario}"</em></span></div>` : ''}
+                        ${s.estado === 'Pendiente' ? `
+                            <button class="btn btn-danger" style="margin-top: 10px;" onclick="cancelarSolicitud(${s.id})">Cancelar solicitud</button>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error cargando historial:', error);
+            }
+        }
+
+        async function cancelarSolicitud(id) {
+            if (!confirm('¿Deseas cancelar esta solicitud?')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('solicitudes')
+                    .update({ estado: 'Cancelada' })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                alert('✅ Solicitud cancelada');
+                cargarHistorial();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cancelar la solicitud');
+            }
+        }
+
+        function limpiarResumen() {
+            document.getElementById('resumen-solicitud').style.display = 'none';
+            document.getElementById('btn-enviar').style.display = 'none';
+        }
+
+        function formatearFecha(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function cerrarSesion() {
+            document.getElementById('main-section').style.display = 'none';
+            document.getElementById('auth-section').style.display = 'block';
+            trabajadorActual = null;
+            document.getElementById('trabajador-select').value = '';
+        }
+
+        // Iniciar app
+        init();
+    </script>
+</body>
+</html>
