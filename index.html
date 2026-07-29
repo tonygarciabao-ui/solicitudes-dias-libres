@@ -26,7 +26,6 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--gray-light);
             color: var(--gray-dark);
-            line-height: 1.6;
         }
 
         .container {
@@ -42,13 +41,44 @@
             color: white;
             padding: 20px;
             border-radius: 8px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             text-align: center;
         }
 
         header h1 {
             font-size: 24px;
             margin-bottom: 5px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--gray-dark);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .form-group {
@@ -94,17 +124,27 @@
             background: var(--primary-light);
         }
 
+        .btn-small {
+            width: auto;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #991b1b;
+        }
+
         .alert {
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 15px;
             font-size: 14px;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border-left: 4px solid var(--danger);
         }
 
         .alert-success {
@@ -113,18 +153,66 @@
             border-left: 4px solid var(--success);
         }
 
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--danger);
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .item-card {
+            background: var(--gray-light);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-info strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .item-info small {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            padding: 15px;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .modal h2 {
+            margin-bottom: 15px;
+            font-size: 18px;
         }
     </style>
 </head>
@@ -135,156 +223,325 @@
             <p>Estrellla Galicia</p>
         </header>
 
-        <div id="alerta"></div>
-
-        <div class="form-group">
-            <label>Selecciona tu nombre:</label>
-            <select id="trabajador-select">
-                <option value="">-- Cargando trabajadores --</option>
-            </select>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="cambiarTab('solicitar')">Nueva Solicitud</button>
+            <button class="tab-btn" onclick="cambiarTab('admin')">⚙️ Admin</button>
         </div>
 
-        <div class="form-group">
-            <label>Tipo de ausencia:</label>
-            <select id="tipo-ausencia">
-                <option value="Días Libres">Días Libres</option>
-                <option value="Asunto Personal">Asunto Personal</option>
-                <option value="Compensación">Compensación</option>
-            </select>
+        <!-- TAB: SOLICITAR -->
+        <div id="tab-solicitar" class="tab-content active">
+            <div id="alerta"></div>
+
+            <div class="form-group">
+                <label>Selecciona tu nombre:</label>
+                <select id="trabajador-select">
+                    <option value="">-- Cargando --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Tipo de ausencia:</label>
+                <select id="tipo-ausencia">
+                    <option value="Días Libres">Días Libres</option>
+                    <option value="Asunto Personal">Asunto Personal</option>
+                    <option value="Compensación">Compensación</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Fecha de inicio:</label>
+                <input type="date" id="fecha-inicio">
+            </div>
+
+            <div class="form-group">
+                <label>Fecha de fin:</label>
+                <input type="date" id="fecha-fin">
+            </div>
+
+            <div class="form-group">
+                <label>Comentarios (opcional):</label>
+                <textarea id="comentario" placeholder="Escribe aquí..."></textarea>
+            </div>
+
+            <button class="btn" onclick="enviarSolicitud()">Enviar Solicitud</button>
         </div>
 
-        <div class="form-group">
-            <label>Fecha de inicio:</label>
-            <input type="date" id="fecha-inicio">
-        </div>
+        <!-- TAB: ADMIN -->
+        <div id="tab-admin" class="tab-content">
+            <div id="admin-content" style="display: none;">
+                <h2 style="margin-bottom: 15px; font-size: 18px;">⚙️ Panel de Administrador</h2>
 
-        <div class="form-group">
-            <label>Fecha de fin:</label>
-            <input type="date" id="fecha-fin">
-        </div>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 10px; font-size: 16px;">👥 Trabajadores (Total: <span id="total-trabajadores">0</span>)</h3>
+                    <button class="btn btn-small" onclick="mostrarModalTrabajador()">+ Añadir Trabajador</button>
+                    <div id="lista-trabajadores" style="margin-top: 15px;"></div>
+                </div>
 
-        <div class="form-group">
-            <label>Comentarios (opcional):</label>
-            <textarea id="comentario" placeholder="Escribe aquí..."></textarea>
-        </div>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 10px; font-size: 16px;">🗓️ Festivos (Total: <span id="total-festivos">0</span>)</h3>
+                    <button class="btn btn-small" onclick="mostrarModalFestivo()">+ Añadir Festivo</button>
+                    <div id="lista-festivos" style="margin-top: 15px;"></div>
+                </div>
 
-        <button class="btn" onclick="enviarSolicitud()">Enviar Solicitud</button>
+                <div style="border-top: 1px solid var(--border); padding-top: 20px;">
+                    <h3 style="margin-bottom: 10px; font-size: 14px;">💾 Backup</h3>
+                    <button class="btn btn-small" onclick="descargarJSON()">Descargar JSON</button>
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">Descarga los datos para actualizar en GitHub manualmente.</p>
+                </div>
+            </div>
+
+            <div id="admin-login" style="text-align: center;">
+                <p style="margin-bottom: 15px; font-size: 14px;">🔐 Panel de Administrador</p>
+                <div class="form-group">
+                    <label>Introduce PIN:</label>
+                    <input type="password" id="admin-pin" placeholder="****">
+                </div>
+                <button class="btn" onclick="verificarPIN()">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TRABAJADOR -->
+    <div id="modal-trabajador" class="modal">
+        <div class="modal-content">
+            <h2>Añadir Trabajador</h2>
+            <div class="form-group">
+                <label>Nombre:</label>
+                <input type="text" id="input-nombre-trab" placeholder="Nombre completo">
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="input-email-trab" placeholder="email@empresa.com">
+            </div>
+            <div class="form-group">
+                <label>Departamento:</label>
+                <input type="text" id="input-depto-trab" placeholder="Departamento">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="flex: 1;" onclick="guardarTrabajador()">Guardar</button>
+                <button class="btn" style="flex: 1; background: #999;" onclick="cerrarModal('modal-trabajador')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FESTIVO -->
+    <div id="modal-festivo" class="modal">
+        <div class="modal-content">
+            <h2>Añadir Festivo</h2>
+            <div class="form-group">
+                <label>Fecha:</label>
+                <input type="date" id="input-fecha-fest">
+            </div>
+            <div class="form-group">
+                <label>Nombre:</label>
+                <input type="text" id="input-nombre-fest" placeholder="Ej: Día de Reyes">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="flex: 1;" onclick="guardarFestivo()">Guardar</button>
+                <button class="btn" style="flex: 1; background: #999;" onclick="cerrarModal('modal-festivo')">Cancelar</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://iujjnaloajvbfuajnrjk.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_0xQo9qxEXoMcQvjNwAmbGA_CicppUNk';
+        // PIN admin (CAMBIA ESTO POR SEGURIDAD)
+        const PIN_ADMIN = '1234';
+        const URL_DATOS = 'https://raw.githubusercontent.com/tonygarciabao-ui/solicitudes-dias-libres/main/datos.json';
 
-        async function fetchSupabase(tabla, metodo = 'GET', datos = null) {
-            const url = `${SUPABASE_URL}/rest/v1/${tabla}`;
-            const opciones = {
-                method: metodo,
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=representation'
-                }
-            };
+        let datos = {
+            trabajadores: [],
+            festivos: []
+        };
 
-            if (datos) {
-                opciones.body = JSON.stringify(datos);
-            }
-
+        // Cargar datos
+        async function cargarDatos() {
             try {
-                const response = await fetch(url, opciones);
-                if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                const response = await fetch(URL_DATOS);
+                if (response.ok) {
+                    datos = await response.json();
+                    actualizarTrabajadores();
+                } else {
+                    console.log('Usando datos locales (JSON no encontrado)');
+                    // Usa datos vacíos o por defecto
                 }
-                return await response.json();
             } catch (error) {
-                console.error('Error Supabase:', error);
-                throw error;
+                console.log('Error cargando JSON, usando localStorage:', error);
+                const datosGuardados = localStorage.getItem('datos-solicitudes');
+                if (datosGuardados) {
+                    datos = JSON.parse(datosGuardados);
+                    actualizarTrabajadores();
+                }
             }
         }
 
-        async function cargarTrabajadores() {
-            try {
-                const trabajadores = await fetchSupabase('trabajadores?order=nombre');
-                const select = document.getElementById('trabajador-select');
-                select.innerHTML = '<option value="">-- Selecciona tu nombre --</option>';
-                
-                trabajadores.forEach(t => {
-                    const option = document.createElement('option');
-                    option.value = t.id;
-                    option.textContent = t.nombre;
-                    option.dataset.email = t.email;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                mostrarAlerta('❌ Error cargando trabajadores: ' + error.message, 'error');
-            }
-        }
-
-        function mostrarAlerta(mensaje, tipo) {
-            const alerta = document.getElementById('alerta');
-            alerta.innerHTML = `<div class="alert alert-${tipo}">${mensaje}</div>`;
-            setTimeout(() => {
-                alerta.innerHTML = '';
-            }, 5000);
-        }
-
-        async function enviarSolicitud() {
+        function actualizarTrabajadores() {
             const select = document.getElementById('trabajador-select');
-            const trabajadorId = select.value;
-            const trabajadorNombre = select.options[select.selectedIndex].textContent;
-            const trabajadorEmail = select.options[select.selectedIndex].dataset.email;
-            const tipoAusencia = document.getElementById('tipo-ausencia').value;
-            const fechaInicio = document.getElementById('fecha-inicio').value;
-            const fechaFin = document.getElementById('fecha-fin').value;
-            const comentario = document.getElementById('comentario').value;
+            select.innerHTML = '<option value="">-- Selecciona tu nombre --</option>';
+            
+            datos.trabajadores.sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach(t => {
+                const option = document.createElement('option');
+                option.value = t.id;
+                option.textContent = t.nombre;
+                option.dataset.email = t.email;
+                select.appendChild(option);
+            });
 
-            if (!trabajadorId || !fechaInicio || !fechaFin) {
-                mostrarAlerta('❌ Completa todos los campos obligatorios', 'error');
+            // Actualizar admin
+            document.getElementById('total-trabajadores').textContent = datos.trabajadores.length;
+            actualizarListaTrabajadores();
+            actualizarListaFestivos();
+        }
+
+        function cambiarTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function verificarPIN() {
+            const pin = document.getElementById('admin-pin').value;
+            if (pin === PIN_ADMIN) {
+                document.getElementById('admin-login').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
+                actualizarListaTrabajadores();
+                actualizarListaFestivos();
+            } else {
+                alert('❌ PIN incorrecto');
+                document.getElementById('admin-pin').value = '';
+            }
+        }
+
+        function mostrarModalTrabajador() {
+            document.getElementById('modal-trabajador').classList.add('active');
+        }
+
+        function mostrarModalFestivo() {
+            document.getElementById('modal-festivo').classList.add('active');
+        }
+
+        function cerrarModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function guardarTrabajador() {
+            const nombre = document.getElementById('input-nombre-trab').value;
+            const email = document.getElementById('input-email-trab').value;
+            const depto = document.getElementById('input-depto-trab').value;
+
+            if (!nombre || !email) {
+                alert('❌ Completa todos los campos');
                 return;
             }
 
-            try {
-                const solicitud = {
-                    trabajador_id: parseInt(trabajadorId),
-                    trabajador_nombre: trabajadorNombre,
-                    email_trabajador: trabajadorEmail,
-                    tipo_ausencia: tipoAusencia,
-                    fecha_inicio: fechaInicio,
-                    fecha_fin: fechaFin,
-                    dias_laborables: calcularDias(fechaInicio, fechaFin),
-                    comentario: comentario || null,
-                    estado: 'Pendiente'
-                };
+            const id = Math.max(...datos.trabajadores.map(t => t.id), 0) + 1;
+            datos.trabajadores.push({
+                id,
+                nombre,
+                email,
+                departamento: depto || 'Expediciones'
+            });
 
-                await fetchSupabase('solicitudes', 'POST', solicitud);
-                
-                mostrarAlerta('✅ Solicitud enviada correctamente', 'success');
-                document.getElementById('tipo-ausencia').value = 'Días Libres';
-                document.getElementById('fecha-inicio').value = '';
-                document.getElementById('fecha-fin').value = '';
-                document.getElementById('comentario').value = '';
-            } catch (error) {
-                mostrarAlerta('❌ Error al enviar solicitud: ' + error.message, 'error');
+            guardarLocalmente();
+            document.getElementById('input-nombre-trab').value = '';
+            document.getElementById('input-email-trab').value = '';
+            document.getElementById('input-depto-trab').value = '';
+            cerrarModal('modal-trabajador');
+            actualizarTrabajadores();
+            alert('✅ Trabajador añadido');
+        }
+
+        function guardarFestivo() {
+            const fecha = document.getElementById('input-fecha-fest').value;
+            const nombre = document.getElementById('input-nombre-fest').value;
+
+            if (!fecha || !nombre) {
+                alert('❌ Completa todos los campos');
+                return;
+            }
+
+            datos.festivos.push({ fecha, nombre });
+            guardarLocalmente();
+            document.getElementById('input-fecha-fest').value = '';
+            document.getElementById('input-nombre-fest').value = '';
+            cerrarModal('modal-festivo');
+            actualizarTrabajadores();
+            alert('✅ Festivo añadido');
+        }
+
+        function actualizarListaTrabajadores() {
+            const lista = document.getElementById('lista-trabajadores');
+            lista.innerHTML = datos.trabajadores.map(t => `
+                <div class="item-card">
+                    <div class="item-info">
+                        <strong>${t.nombre}</strong>
+                        <small>${t.email}</small>
+                    </div>
+                    <button class="btn btn-small btn-danger" onclick="eliminarTrabajador(${t.id})">Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        function actualizarListaFestivos() {
+            const lista = document.getElementById('lista-festivos');
+            document.getElementById('total-festivos').textContent = datos.festivos.length;
+            lista.innerHTML = datos.festivos.map((f, i) => `
+                <div class="item-card">
+                    <div class="item-info">
+                        <strong>${f.nombre}</strong>
+                        <small>${f.fecha}</small>
+                    </div>
+                    <button class="btn btn-small btn-danger" onclick="eliminarFestivo(${i})">Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        function eliminarTrabajador(id) {
+            if (confirm('¿Eliminar este trabajador?')) {
+                datos.trabajadores = datos.trabajadores.filter(t => t.id !== id);
+                guardarLocalmente();
+                actualizarTrabajadores();
             }
         }
 
-        function calcularDias(inicio, fin) {
-            const start = new Date(inicio);
-            const end = new Date(fin);
-            let count = 0;
-            
-            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                const dayOfWeek = d.getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    count++;
-                }
+        function eliminarFestivo(index) {
+            if (confirm('¿Eliminar este festivo?')) {
+                datos.festivos.splice(index, 1);
+                guardarLocalmente();
+                actualizarTrabajadores();
             }
-            return count;
         }
 
-        // Cargar trabajadores al iniciar
-        cargarTrabajadores();
+        function guardarLocalmente() {
+            localStorage.setItem('datos-solicitudes', JSON.stringify(datos));
+        }
+
+        function descargarJSON() {
+            const json = JSON.stringify(datos, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'datos.json';
+            a.click();
+        }
+
+        function enviarSolicitud() {
+            const trabajadorId = document.getElementById('trabajador-select').value;
+            const fechaInicio = document.getElementById('fecha-inicio').value;
+            const fechaFin = document.getElementById('fecha-fin').value;
+
+            if (!trabajadorId || !fechaInicio || !fechaFin) {
+                alert('❌ Completa todos los campos');
+                return;
+            }
+
+            alert('✅ Solicitud enviada (próximamente se integrará con Power Automate)');
+        }
+
+        // Inicializar
+        cargarDatos();
     </script>
 </body>
 </html>
