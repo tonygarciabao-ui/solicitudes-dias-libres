@@ -329,7 +329,7 @@
 
             <div class="form-group">
                 <label>Selecciona tu nombre:</label>
-                <select id="trabajador-select">
+                <select id="trabajador-select" onchange="cambiarTrabajador()">
                     <option value="">-- Cargando --</option>
                 </select>
             </div>
@@ -477,23 +477,34 @@
         const URL_DATOS = 'https://raw.githubusercontent.com/tonygarciabao-ui/solicitudes-dias-libres/main/datos.json';
 
         let datos = { trabajadores: [], festivos: [] };
+        let solicitudes = []; // Almacena solicitudes enviadas
         let diasSeleccionados = [];
         let periodosSeleccionados = [];
         let mesActual = new Date();
+        let trabajadorActualId = null;
 
         async function cargarDatos() {
             try {
                 const response = await fetch(URL_DATOS);
                 if (response.ok) {
                     datos = await response.json();
+                    cargarSolicitudes();
                     actualizarTrabajadores();
                 }
             } catch (error) {
                 const datosGuardados = localStorage.getItem('datos-solicitudes');
                 if (datosGuardados) {
                     datos = JSON.parse(datosGuardados);
+                    cargarSolicitudes();
                     actualizarTrabajadores();
                 }
+            }
+        }
+
+        function cargarSolicitudes() {
+            const solicitudesGuardadas = localStorage.getItem('solicitudes-registro');
+            if (solicitudesGuardadas) {
+                solicitudes = JSON.parse(solicitudesGuardadas);
             }
         }
 
@@ -513,6 +524,19 @@
             actualizarListaTrabajadores();
             actualizarListaFestivos();
             dibujarCalendario();
+        }
+
+        function cambiarTrabajador() {
+            const select = document.getElementById('trabajador-select');
+            trabajadorActualId = select.value;
+            
+            // Limpiar selección de días
+            diasSeleccionados = [];
+            periodosSeleccionados = [];
+            
+            // Actualizar resumen y calendario
+            dibujarCalendario();
+            actualizarResumen();
         }
 
         function dibujarCalendario() {
@@ -683,38 +707,73 @@
         function actualizarResumen() {
             const contenido = document.getElementById('resumen-contenido');
             
-            if (diasSeleccionados.length === 0 && periodosSeleccionados.length === 0) {
-                contenido.innerHTML = '<p style="color: #999; font-size: 13px;">Selecciona días o periodos arriba</p>';
+            if (!trabajadorActualId) {
+                contenido.innerHTML = '<p style="color: #999; font-size: 13px;">Selecciona un trabajador primero</p>';
                 return;
             }
 
-            let html = '';
-            let totalDias = 0;
+            const trabajador = datos.trabajadores.find(t => t.id == trabajadorActualId);
+            const solicitudesDelTrabajador = solicitudes.filter(s => s.trabajador_id == trabajadorActualId);
 
-            // Períodos
-            periodosSeleccionados.forEach((p, i) => {
-                const dias = calcularDiasLaborables(p.inicio, p.fin);
-                totalDias += dias;
-                html += `
-                    <div class="resumen-item">
-                        <span>📅 ${p.inicio} a ${p.fin} (${dias} días lab.)</span>
-                        <button class="btn btn-small btn-danger" onclick="eliminarPeriodo(${i})">✕</button>
-                    </div>
-                `;
-            });
+            let html = `<div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid var(--border);">
+                <strong style="color: var(--primary); font-size: 13px;">📋 SOLICITUDES DE: ${trabajador?.nombre || 'Desconocido'}</strong>
+            </div>`;
 
-            // Días individuales
-            diasSeleccionados.forEach(d => {
-                totalDias += 1;
-                html += `
-                    <div class="resumen-item">
-                        <span>📌 ${d}</span>
-                        <button class="btn btn-small btn-danger" onclick="eliminarDia('${d}')">✕</button>
-                    </div>
-                `;
-            });
+            // SOLICITUDES ANTERIORES
+            if (solicitudesDelTrabajador.length > 0) {
+                html += '<div style="margin-bottom: 15px;"><strong style="font-size: 13px; color: #666;">Solicitudes anteriores:</strong>';
+                
+                const estadoEmoji = {
+                    'Aprobada': '✅',
+                    'Pendiente': '⏳',
+                    'Rechazada': '❌',
+                    'Cancelada': '⊘'
+                };
 
-            html += `<div class="resumen-total">TOTAL: ${totalDias} día(s) laborable(s)</div>`;
+                solicitudesDelTrabajador.forEach(s => {
+                    const emoji = estadoEmoji[s.estado] || '•';
+                    html += `
+                        <div class="resumen-item" style="margin-top: 8px;">
+                            <span>${emoji} ${s.fecha_inicio} a ${s.fecha_fin} (${s.dias_laborables} días) - ${s.estado}</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // NUEVA SOLICITUD EN PREPARACIÓN
+            html += '<div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--border);"><strong style="font-size: 13px; color: #666;">Nueva solicitud en preparación:</strong>';
+            
+            if (diasSeleccionados.length === 0 && periodosSeleccionados.length === 0) {
+                html += '<p style="color: #999; font-size: 13px; margin-top: 8px;">Sin selección</p>';
+            } else {
+                let totalDias = 0;
+
+                periodosSeleccionados.forEach((p, i) => {
+                    const dias = calcularDiasLaborables(p.inicio, p.fin);
+                    totalDias += dias;
+                    html += `
+                        <div class="resumen-item" style="margin-top: 8px;">
+                            <span>📅 ${p.inicio} a ${p.fin} (${dias} días lab.)</span>
+                            <button class="btn btn-small btn-danger" onclick="eliminarPeriodo(${i})">✕</button>
+                        </div>
+                    `;
+                });
+
+                diasSeleccionados.forEach(d => {
+                    totalDias += 1;
+                    html += `
+                        <div class="resumen-item" style="margin-top: 8px;">
+                            <span>📌 ${d}</span>
+                            <button class="btn btn-small btn-danger" onclick="eliminarDia('${d}')">✕</button>
+                        </div>
+                    `;
+                });
+
+                html += `<div class="resumen-total">TOTAL: ${totalDias} día(s) laborable(s)</div>`;
+            }
+            html += '</div>';
+
             contenido.innerHTML = html;
         }
 
@@ -838,6 +897,8 @@
 
         function enviarSolicitud() {
             const trabajadorId = document.getElementById('trabajador-select').value;
+            const tipoAusencia = document.getElementById('tipo-ausencia').value;
+            const comentario = document.getElementById('comentario').value;
             
             if (!trabajadorId) {
                 alert('❌ Selecciona un trabajador');
@@ -850,11 +911,46 @@
             }
 
             let totalDias = diasSeleccionados.length;
-            periodosSeleccionados.forEach(p => {
-                totalDias += calcularDiasLaborables(p.inicio, p.fin);
-            });
+            let fechaInicio, fechaFin;
 
-            alert(`✅ Solicitud de ${totalDias} día(s) confirmada\n(Próximamente se enviará a tu manager)`);
+            if (periodosSeleccionados.length > 0) {
+                fechaInicio = periodosSeleccionados[0].inicio;
+                fechaFin = periodosSeleccionados[periodosSeleccionados.length - 1].fin;
+                periodosSeleccionados.forEach(p => {
+                    totalDias += calcularDiasLaborables(p.inicio, p.fin);
+                });
+            } else {
+                fechaInicio = diasSeleccionados[0];
+                fechaFin = diasSeleccionados[diasSeleccionados.length - 1];
+            }
+
+            const trabajador = datos.trabajadores.find(t => t.id == trabajadorId);
+            const nuevaSolicitud = {
+                id: Date.now(),
+                trabajador_id: parseInt(trabajadorId),
+                trabajador_nombre: trabajador.nombre,
+                email: trabajador.email,
+                tipo_ausencia: tipoAusencia,
+                fecha_inicio: fechaInicio,
+                fecha_fin: fechaFin,
+                dias_laborables: totalDias,
+                comentario: comentario || '',
+                estado: 'Pendiente',
+                fecha_solicitud: new Date().toISOString().split('T')[0]
+            };
+
+            solicitudes.push(nuevaSolicitud);
+            localStorage.setItem('solicitudes-registro', JSON.stringify(solicitudes));
+
+            alert(`✅ Solicitud de ${totalDias} día(s) registrada\n(Estado: Pendiente)`);
+
+            // Limpiar formulario
+            diasSeleccionados = [];
+            periodosSeleccionados = [];
+            document.getElementById('tipo-ausencia').value = 'Días Libres';
+            document.getElementById('comentario').value = '';
+            dibujarCalendario();
+            actualizarResumen();
         }
 
         cargarDatos();
