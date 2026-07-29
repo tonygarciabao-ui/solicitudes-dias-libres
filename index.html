@@ -29,7 +29,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
             padding: 15px;
             background: white;
@@ -140,6 +140,117 @@
             background: #991b1b;
         }
 
+        .btn-secondary {
+            background: #999;
+        }
+
+        .btn-secondary:hover {
+            background: #777;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--gray-light);
+            border-radius: 8px;
+        }
+
+        .calendar-header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .calendar-nav button {
+            padding: 5px 10px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        .day-header {
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .calendar-day:hover {
+            border-color: var(--primary);
+            background: #f0f4ff;
+        }
+
+        .calendar-day.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .calendar-day.disabled {
+            background: #f3f4f6;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .resumen-box {
+            background: #f0f4ff;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .resumen-titulo {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .resumen-item {
+            background: white;
+            border-left: 4px solid var(--primary);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .resumen-total {
+            background: var(--success);
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
         .alert {
             padding: 12px;
             border-radius: 6px;
@@ -157,31 +268,6 @@
             background: #fee2e2;
             color: #991b1b;
             border-left: 4px solid var(--danger);
-        }
-
-        .item-card {
-            background: var(--gray-light);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .item-info {
-            flex: 1;
-        }
-
-        .item-info strong {
-            display: block;
-            margin-bottom: 3px;
-        }
-
-        .item-info small {
-            color: #999;
-            font-size: 12px;
         }
 
         .modal {
@@ -213,6 +299,15 @@
         .modal h2 {
             margin-bottom: 15px;
             font-size: 18px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
         }
     </style>
 </head>
@@ -249,13 +344,28 @@
             </div>
 
             <div class="form-group">
-                <label>Fecha de inicio:</label>
-                <input type="date" id="fecha-inicio">
+                <label>📅 Selecciona tus días (click para añadir/quitar):</label>
             </div>
 
-            <div class="form-group">
-                <label>Fecha de fin:</label>
-                <input type="date" id="fecha-fin">
+            <!-- CALENDARIO -->
+            <div class="calendar" id="calendario">
+                <div class="calendar-header">
+                    <div class="calendar-nav">
+                        <button class="btn btn-small btn-secondary" onclick="mesAnterior()">← Anterior</button>
+                        <span id="mes-actual" style="min-width: 150px; text-align: center;"></span>
+                        <button class="btn btn-small btn-secondary" onclick="mesSiguiente()">Siguiente →</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-small" onclick="abrirModalPeriodo()">➕ Añadir período</button>
+
+            <!-- RESUMEN -->
+            <div class="resumen-box">
+                <div class="resumen-titulo">📋 RESUMEN DE TU SELECCIÓN</div>
+                <div id="resumen-contenido" style="min-height: 60px;">
+                    <p style="color: #999; font-size: 13px;">Selecciona días o periodos arriba</p>
+                </div>
             </div>
 
             <div class="form-group">
@@ -263,7 +373,7 @@
                 <textarea id="comentario" placeholder="Escribe aquí..."></textarea>
             </div>
 
-            <button class="btn" onclick="enviarSolicitud()">Enviar Solicitud</button>
+            <button class="btn" onclick="enviarSolicitud()">✅ Confirmar Solicitud</button>
         </div>
 
         <!-- TAB: ADMIN -->
@@ -301,6 +411,25 @@
         </div>
     </div>
 
+    <!-- MODAL PERÍODO -->
+    <div id="modal-periodo" class="modal">
+        <div class="modal-content">
+            <h2>Añadir Período</h2>
+            <div class="form-group">
+                <label>Fecha de inicio:</label>
+                <input type="date" id="input-fecha-inicio-periodo">
+            </div>
+            <div class="form-group">
+                <label>Fecha de fin:</label>
+                <input type="date" id="input-fecha-fin-periodo">
+            </div>
+            <div class="btn-group">
+                <button class="btn" onclick="guardarPeriodo()">Guardar</button>
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-periodo')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL TRABAJADOR -->
     <div id="modal-trabajador" class="modal">
         <div class="modal-content">
@@ -317,9 +446,9 @@
                 <label>Departamento:</label>
                 <input type="text" id="input-depto-trab" placeholder="Departamento">
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn" style="flex: 1;" onclick="guardarTrabajador()">Guardar</button>
-                <button class="btn" style="flex: 1; background: #999;" onclick="cerrarModal('modal-trabajador')">Cancelar</button>
+            <div class="btn-group">
+                <button class="btn" onclick="guardarTrabajador()">Guardar</button>
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-trabajador')">Cancelar</button>
             </div>
         </div>
     </div>
@@ -336,36 +465,30 @@
                 <label>Nombre:</label>
                 <input type="text" id="input-nombre-fest" placeholder="Ej: Día de Reyes">
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn" style="flex: 1;" onclick="guardarFestivo()">Guardar</button>
-                <button class="btn" style="flex: 1; background: #999;" onclick="cerrarModal('modal-festivo')">Cancelar</button>
+            <div class="btn-group">
+                <button class="btn" onclick="guardarFestivo()">Guardar</button>
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-festivo')">Cancelar</button>
             </div>
         </div>
     </div>
 
     <script>
-        // PIN admin (CAMBIA ESTO POR SEGURIDAD)
         const PIN_ADMIN = '1234';
         const URL_DATOS = 'https://raw.githubusercontent.com/tonygarciabao-ui/solicitudes-dias-libres/main/datos.json';
 
-        let datos = {
-            trabajadores: [],
-            festivos: []
-        };
+        let datos = { trabajadores: [], festivos: [] };
+        let diasSeleccionados = [];
+        let periodosSeleccionados = [];
+        let mesActual = new Date();
 
-        // Cargar datos
         async function cargarDatos() {
             try {
                 const response = await fetch(URL_DATOS);
                 if (response.ok) {
                     datos = await response.json();
                     actualizarTrabajadores();
-                } else {
-                    console.log('Usando datos locales (JSON no encontrado)');
-                    // Usa datos vacíos o por defecto
                 }
             } catch (error) {
-                console.log('Error cargando JSON, usando localStorage:', error);
                 const datosGuardados = localStorage.getItem('datos-solicitudes');
                 if (datosGuardados) {
                     datos = JSON.parse(datosGuardados);
@@ -386,10 +509,213 @@
                 select.appendChild(option);
             });
 
-            // Actualizar admin
             document.getElementById('total-trabajadores').textContent = datos.trabajadores.length;
             actualizarListaTrabajadores();
             actualizarListaFestivos();
+            dibujarCalendario();
+        }
+
+        function dibujarCalendario() {
+            const calendar = document.getElementById('calendario');
+            calendar.innerHTML = '';
+            
+            // Header con navegación
+            const headerDiv = document.createElement('div');
+            headerDiv.style.gridColumn = '1 / -1';
+            headerDiv.style.display = 'flex';
+            headerDiv.style.justifyContent = 'space-between';
+            headerDiv.style.alignItems = 'center';
+            headerDiv.style.marginBottom = '10px';
+            headerDiv.style.fontWeight = '600';
+            
+            const navDiv = document.createElement('div');
+            navDiv.style.display = 'flex';
+            navDiv.style.gap = '10px';
+            
+            const btnAnt = document.createElement('button');
+            btnAnt.textContent = '← Anterior';
+            btnAnt.className = 'btn btn-small btn-secondary';
+            btnAnt.onclick = mesAnterior;
+            
+            const mesSpan = document.createElement('span');
+            mesSpan.id = 'mes-actual';
+            mesSpan.style.minWidth = '150px';
+            mesSpan.style.textAlign = 'center';
+            
+            const btnSig = document.createElement('button');
+            btnSig.textContent = 'Siguiente →';
+            btnSig.className = 'btn btn-small btn-secondary';
+            btnSig.onclick = mesSiguiente;
+            
+            navDiv.appendChild(btnAnt);
+            navDiv.appendChild(mesSpan);
+            navDiv.appendChild(btnSig);
+            headerDiv.appendChild(navDiv);
+            calendar.appendChild(headerDiv);
+            
+            const year = mesActual.getFullYear();
+            const month = mesActual.getMonth();
+            
+            // Días de la semana
+            ['L', 'M', 'X', 'J', 'V', 'S', 'D'].forEach(d => {
+                const header = document.createElement('div');
+                header.className = 'day-header';
+                header.textContent = d;
+                calendar.appendChild(header);
+            });
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Espacios vacíos
+            for (let i = 0; i < (firstDay === 0 ? 6 : firstDay - 1); i++) {
+                calendar.appendChild(document.createElement('div'));
+            }
+            
+            // Días del mes
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const date = new Date(dateStr);
+                const dayOfWeek = date.getDay();
+                
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                dayDiv.textContent = day;
+                
+                const esFestivo = datos.festivos.some(f => f.fecha === dateStr);
+                const esFinDeSemana = dayOfWeek === 0 || dayOfWeek === 6;
+                const esPasado = date < new Date().setHours(0,0,0,0);
+                
+                if (esPasado || esFinDeSemana || esFestivo) {
+                    dayDiv.classList.add('disabled');
+                } else {
+                    dayDiv.onclick = () => toggleDia(dateStr);
+                    if (diasSeleccionados.includes(dateStr)) {
+                        dayDiv.classList.add('selected');
+                    }
+                }
+                
+                calendar.appendChild(dayDiv);
+            }
+            
+            // Actualizar título
+            const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            document.getElementById('mes-actual').textContent = `${meses[month]} ${year}`;
+            
+            actualizarResumen();
+        }
+
+        function toggleDia(dateStr) {
+            if (diasSeleccionados.includes(dateStr)) {
+                diasSeleccionados = diasSeleccionados.filter(d => d !== dateStr);
+            } else {
+                diasSeleccionados.push(dateStr);
+                diasSeleccionados.sort();
+            }
+            dibujarCalendario();
+        }
+
+        function mesAnterior() {
+            mesActual.setMonth(mesActual.getMonth() - 1);
+            dibujarCalendario();
+        }
+
+        function mesSiguiente() {
+            mesActual.setMonth(mesActual.getMonth() + 1);
+            dibujarCalendario();
+        }
+
+        function abrirModalPeriodo() {
+            document.getElementById('modal-periodo').classList.add('active');
+        }
+
+        function cerrarModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function guardarPeriodo() {
+            const inicio = document.getElementById('input-fecha-inicio-periodo').value;
+            const fin = document.getElementById('input-fecha-fin-periodo').value;
+            
+            if (!inicio || !fin) {
+                alert('❌ Completa ambas fechas');
+                return;
+            }
+            
+            if (new Date(fin) < new Date(inicio)) {
+                alert('❌ La fecha final no puede ser anterior a la inicial');
+                return;
+            }
+
+            periodosSeleccionados.push({ inicio, fin });
+            document.getElementById('input-fecha-inicio-periodo').value = '';
+            document.getElementById('input-fecha-fin-periodo').value = '';
+            cerrarModal('modal-periodo');
+            actualizarResumen();
+        }
+
+        function eliminarPeriodo(index) {
+            periodosSeleccionados.splice(index, 1);
+            actualizarResumen();
+        }
+
+        function eliminarDia(dia) {
+            diasSeleccionados = diasSeleccionados.filter(d => d !== dia);
+            dibujarCalendario();
+        }
+
+        function calcularDiasLaborables(inicio, fin) {
+            let count = 0;
+            const start = new Date(inicio);
+            const end = new Date(fin);
+            
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dayOfWeek = d.getDay();
+                const dateStr = d.toISOString().split('T')[0];
+                
+                if (dayOfWeek !== 0 && dayOfWeek !== 6 && !datos.festivos.some(f => f.fecha === dateStr)) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        function actualizarResumen() {
+            const contenido = document.getElementById('resumen-contenido');
+            
+            if (diasSeleccionados.length === 0 && periodosSeleccionados.length === 0) {
+                contenido.innerHTML = '<p style="color: #999; font-size: 13px;">Selecciona días o periodos arriba</p>';
+                return;
+            }
+
+            let html = '';
+            let totalDias = 0;
+
+            // Períodos
+            periodosSeleccionados.forEach((p, i) => {
+                const dias = calcularDiasLaborables(p.inicio, p.fin);
+                totalDias += dias;
+                html += `
+                    <div class="resumen-item">
+                        <span>📅 ${p.inicio} a ${p.fin} (${dias} días lab.)</span>
+                        <button class="btn btn-small btn-danger" onclick="eliminarPeriodo(${i})">✕</button>
+                    </div>
+                `;
+            });
+
+            // Días individuales
+            diasSeleccionados.forEach(d => {
+                totalDias += 1;
+                html += `
+                    <div class="resumen-item">
+                        <span>📌 ${d}</span>
+                        <button class="btn btn-small btn-danger" onclick="eliminarDia('${d}')">✕</button>
+                    </div>
+                `;
+            });
+
+            html += `<div class="resumen-total">TOTAL: ${totalDias} día(s) laborable(s)</div>`;
+            contenido.innerHTML = html;
         }
 
         function cambiarTab(tab) {
@@ -405,8 +731,6 @@
             if (pin === PIN_ADMIN) {
                 document.getElementById('admin-login').style.display = 'none';
                 document.getElementById('admin-content').style.display = 'block';
-                actualizarListaTrabajadores();
-                actualizarListaFestivos();
             } else {
                 alert('❌ PIN incorrecto');
                 document.getElementById('admin-pin').value = '';
@@ -421,10 +745,6 @@
             document.getElementById('modal-festivo').classList.add('active');
         }
 
-        function cerrarModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
-
         function guardarTrabajador() {
             const nombre = document.getElementById('input-nombre-trab').value;
             const email = document.getElementById('input-email-trab').value;
@@ -436,12 +756,7 @@
             }
 
             const id = Math.max(...datos.trabajadores.map(t => t.id), 0) + 1;
-            datos.trabajadores.push({
-                id,
-                nombre,
-                email,
-                departamento: depto || 'Expediciones'
-            });
+            datos.trabajadores.push({ id, nombre, email, departamento: depto || 'Expediciones' });
 
             guardarLocalmente();
             document.getElementById('input-nombre-trab').value = '';
@@ -473,11 +788,8 @@
         function actualizarListaTrabajadores() {
             const lista = document.getElementById('lista-trabajadores');
             lista.innerHTML = datos.trabajadores.map(t => `
-                <div class="item-card">
-                    <div class="item-info">
-                        <strong>${t.nombre}</strong>
-                        <small>${t.email}</small>
-                    </div>
+                <div class="resumen-item">
+                    <div><strong>${t.nombre}</strong><br><small>${t.email}</small></div>
                     <button class="btn btn-small btn-danger" onclick="eliminarTrabajador(${t.id})">Eliminar</button>
                 </div>
             `).join('');
@@ -487,18 +799,15 @@
             const lista = document.getElementById('lista-festivos');
             document.getElementById('total-festivos').textContent = datos.festivos.length;
             lista.innerHTML = datos.festivos.map((f, i) => `
-                <div class="item-card">
-                    <div class="item-info">
-                        <strong>${f.nombre}</strong>
-                        <small>${f.fecha}</small>
-                    </div>
+                <div class="resumen-item">
+                    <div><strong>${f.nombre}</strong><br><small>${f.fecha}</small></div>
                     <button class="btn btn-small btn-danger" onclick="eliminarFestivo(${i})">Eliminar</button>
                 </div>
             `).join('');
         }
 
         function eliminarTrabajador(id) {
-            if (confirm('¿Eliminar este trabajador?')) {
+            if (confirm('¿Eliminar?')) {
                 datos.trabajadores = datos.trabajadores.filter(t => t.id !== id);
                 guardarLocalmente();
                 actualizarTrabajadores();
@@ -506,7 +815,7 @@
         }
 
         function eliminarFestivo(index) {
-            if (confirm('¿Eliminar este festivo?')) {
+            if (confirm('¿Eliminar?')) {
                 datos.festivos.splice(index, 1);
                 guardarLocalmente();
                 actualizarTrabajadores();
@@ -529,18 +838,25 @@
 
         function enviarSolicitud() {
             const trabajadorId = document.getElementById('trabajador-select').value;
-            const fechaInicio = document.getElementById('fecha-inicio').value;
-            const fechaFin = document.getElementById('fecha-fin').value;
-
-            if (!trabajadorId || !fechaInicio || !fechaFin) {
-                alert('❌ Completa todos los campos');
+            
+            if (!trabajadorId) {
+                alert('❌ Selecciona un trabajador');
                 return;
             }
 
-            alert('✅ Solicitud enviada (próximamente se integrará con Power Automate)');
+            if (diasSeleccionados.length === 0 && periodosSeleccionados.length === 0) {
+                alert('❌ Selecciona al menos un día');
+                return;
+            }
+
+            let totalDias = diasSeleccionados.length;
+            periodosSeleccionados.forEach(p => {
+                totalDias += calcularDiasLaborables(p.inicio, p.fin);
+            });
+
+            alert(`✅ Solicitud de ${totalDias} día(s) confirmada\n(Próximamente se enviará a tu manager)`);
         }
 
-        // Inicializar
         cargarDatos();
     </script>
 </body>
